@@ -68,6 +68,7 @@ const output = {
   fastSaleValue: document.querySelector("#fastSaleValue"),
   correctSaleValue: document.querySelector("#correctSaleValue"),
   marketLimitValue: document.querySelector("#marketLimitValue"),
+  recommendedSaleValue: document.querySelector("#recommendedSaleValue"),
   weightedArea: document.querySelector("#weightedArea"),
   zonePrice: document.querySelector("#zonePrice"),
   potentialCost: document.querySelector("#potentialCost"),
@@ -90,6 +91,7 @@ const printOutput = {
   fastSaleValue: document.querySelector("#printFastSaleValue"),
   correctSaleValue: document.querySelector("#printCorrectSaleValue"),
   marketLimitValue: document.querySelector("#printMarketLimitValue"),
+  recommendedSaleValue: document.querySelector("#printRecommendedSaleValue"),
   privateArea: document.querySelector("#printPrivateArea"),
   dependentArea: document.querySelector("#printDependentArea"),
   landArea: document.querySelector("#printLandArea"),
@@ -194,6 +196,10 @@ function normalizePriceRange(lowInput, highInput) {
   };
 }
 
+function roundUpToThousand(value) {
+  return value > 0 ? Math.ceil(value / 1000) * 1000 : 0;
+}
+
 function formatPotentialCost(lowValue, highValue, buildableArea, landType) {
   if (!landType) return "Sem terreno selecionado";
   if (landType === "rustic") return "Sem potencial de construção";
@@ -296,6 +302,7 @@ function getValuation() {
   const lowValue = baseLowValue + conditionUpliftLow;
   const highValue = baseHighValue + conditionUpliftHigh;
   const referenceValue = (lowValue + highValue) / 2;
+  const recommendedSaleValue = roundUpToThousand(referenceValue);
   const weightedLandLowArea = pricePerSqmLow ? landLowValue / pricePerSqmLow : 0;
   const weightedLandHighArea = pricePerSqmHigh ? landHighValue / pricePerSqmHigh : 0;
   const weightedLowArea = privateArea + dependentArea * DEPENDENT_LOW_WEIGHT + weightedLandLowArea;
@@ -337,6 +344,7 @@ function getValuation() {
     lowValue,
     highValue,
     referenceValue,
+    recommendedSaleValue,
     weightedLowArea,
     weightedHighArea,
   };
@@ -371,6 +379,7 @@ function render() {
   output.fastSaleValue.textContent = formatCurrency(valuation.lowValue);
   output.correctSaleValue.textContent = formatCurrency(valuation.referenceValue);
   output.marketLimitValue.textContent = formatCurrency(valuation.highValue);
+  output.recommendedSaleValue.textContent = formatCurrency(valuation.recommendedSaleValue);
   output.weightedArea.textContent = weightedArea;
   output.zonePrice.textContent = zonePrice;
   output.potentialCost.textContent = potentialCost;
@@ -389,6 +398,7 @@ function render() {
   printOutput.fastSaleValue.textContent = formatCurrency(valuation.lowValue);
   printOutput.correctSaleValue.textContent = formatCurrency(valuation.referenceValue);
   printOutput.marketLimitValue.textContent = formatCurrency(valuation.highValue);
+  printOutput.recommendedSaleValue.textContent = formatCurrency(valuation.recommendedSaleValue);
   printOutput.privateArea.textContent = formatArea(valuation.privateArea);
   printOutput.dependentArea.textContent = formatArea(valuation.dependentArea);
   printOutput.landArea.textContent = formatArea(valuation.landArea);

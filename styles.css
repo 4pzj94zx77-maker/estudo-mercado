@@ -326,6 +326,38 @@ select:disabled {
   color: var(--remax-red);
 }
 
+.recommended-sale {
+  margin: 0 0 22px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 61, 165, 0.22);
+  border-left: 7px solid var(--remax-blue);
+  border-radius: 8px;
+  background: #edf3ff;
+}
+
+.recommended-sale span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--remax-blue-deep);
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.recommended-sale strong {
+  display: block;
+  color: var(--remax-blue);
+  font-size: clamp(1.8rem, 7vw, 2.8rem);
+  line-height: 1;
+}
+
+.recommended-sale small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .reference-value span {
   margin: 0;
   color: var(--muted);
@@ -702,6 +734,44 @@ dl {
 
   .print-strategy-limit strong {
     color: var(--remax-red);
+  }
+
+  .print-recommended-sale {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 0 0 26px;
+    padding: 18px 20px;
+    border: 1px solid rgba(0, 61, 165, 0.22);
+    border-left: 7px solid var(--remax-blue);
+    border-radius: 8px;
+    background: #edf3ff;
+    page-break-inside: avoid;
+  }
+
+  .print-recommended-sale span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--remax-blue-deep);
+    font-size: 8pt;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .print-recommended-sale strong {
+    display: block;
+    color: var(--remax-blue);
+    font-size: 25pt;
+    line-height: 1;
+    text-align: right;
+  }
+
+  .print-recommended-sale small {
+    display: block;
+    color: var(--muted);
+    font-size: 8pt;
+    font-weight: 800;
   }
 
   .print-section {
