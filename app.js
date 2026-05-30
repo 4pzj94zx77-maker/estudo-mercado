@@ -66,6 +66,9 @@ const output = {
   resultLocation: document.querySelector("#resultLocation"),
   valueRange: document.querySelector("#valueRange"),
   referenceValue: document.querySelector("#referenceValue"),
+  fastSaleValue: document.querySelector("#fastSaleValue"),
+  correctSaleValue: document.querySelector("#correctSaleValue"),
+  marketLimitValue: document.querySelector("#marketLimitValue"),
   weightedArea: document.querySelector("#weightedArea"),
   zonePrice: document.querySelector("#zonePrice"),
   potentialCost: document.querySelector("#potentialCost"),
@@ -87,6 +90,9 @@ const printOutput = {
   location: document.querySelector("#printLocation"),
   range: document.querySelector("#printRange"),
   reference: document.querySelector("#printReference"),
+  fastSaleValue: document.querySelector("#printFastSaleValue"),
+  correctSaleValue: document.querySelector("#printCorrectSaleValue"),
+  marketLimitValue: document.querySelector("#printMarketLimitValue"),
   privateArea: document.querySelector("#printPrivateArea"),
   dependentArea: document.querySelector("#printDependentArea"),
   landArea: document.querySelector("#printLandArea"),
@@ -332,6 +338,9 @@ function render() {
   output.resultLocation.textContent = location;
   output.valueRange.textContent = range;
   output.referenceValue.textContent = formatCurrency(valuation.referenceValue);
+  output.fastSaleValue.textContent = formatCurrency(valuation.lowValue);
+  output.correctSaleValue.textContent = formatCurrency(valuation.referenceValue);
+  output.marketLimitValue.textContent = formatCurrency(valuation.highValue);
   output.weightedArea.textContent = weightedArea;
   output.zonePrice.textContent = zonePrice;
   output.potentialCost.textContent = potentialCost;
@@ -349,6 +358,9 @@ function render() {
   printOutput.location.textContent = location;
   printOutput.range.textContent = range;
   printOutput.reference.textContent = formatCurrency(valuation.referenceValue);
+  printOutput.fastSaleValue.textContent = formatCurrency(valuation.lowValue);
+  printOutput.correctSaleValue.textContent = formatCurrency(valuation.referenceValue);
+  printOutput.marketLimitValue.textContent = formatCurrency(valuation.highValue);
   printOutput.privateArea.textContent = formatArea(valuation.privateArea);
   printOutput.dependentArea.textContent = formatArea(valuation.dependentArea);
   printOutput.landArea.textContent = formatArea(valuation.landArea);

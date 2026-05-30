@@ -269,6 +269,63 @@ select:disabled {
   border-bottom: 1px solid var(--line);
 }
 
+.price-strategy {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.strategy-card {
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-left-width: 7px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.strategy-card span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.strategy-card strong {
+  display: block;
+  font-size: clamp(1.35rem, 5vw, 2rem);
+  line-height: 1;
+}
+
+.strategy-fast {
+  border-left-color: #18a058;
+  background: #f0fbf5;
+}
+
+.strategy-fast strong {
+  color: #08723d;
+}
+
+.strategy-correct {
+  border-left-color: #f4c430;
+  background: #fff9e6;
+}
+
+.strategy-correct strong {
+  color: #9a6b00;
+}
+
+.strategy-limit {
+  border-left-color: var(--remax-red);
+  background: #fff1f2;
+}
+
+.strategy-limit strong {
+  color: var(--remax-red);
+}
+
 .reference-value span {
   margin: 0;
   color: var(--muted);
@@ -445,8 +502,13 @@ dl {
 
 @media print {
   @page {
-    margin: 16mm;
+    margin: 9mm;
     size: A4;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   body {
@@ -468,35 +530,38 @@ dl {
     display: block;
     color: #162033;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 8.7pt;
+    line-height: 1.25;
   }
 
   .print-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    padding-bottom: 16px;
-    border-bottom: 4px solid var(--remax-red);
+    gap: 14px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid var(--remax-red);
+    page-break-inside: avoid;
   }
 
   .print-header img {
-    width: 260px;
+    width: 210px;
     height: auto;
   }
 
   .print-header h1 {
-    max-width: 280px;
+    max-width: 240px;
     color: var(--remax-blue-deep);
-    font-size: 22pt;
+    font-size: 17pt;
     line-height: 1.05;
     text-align: right;
   }
 
   .print-client,
   .print-location {
-    margin: 18px 0;
+    margin: 8px 0;
     color: var(--muted);
-    font-size: 12pt;
+    font-size: 9.5pt;
     font-weight: 800;
   }
 
@@ -505,72 +570,150 @@ dl {
   }
 
   .print-location {
-    margin-top: 6px;
+    margin-top: 3px;
   }
 
   .print-highlight {
-    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 8px 0 6px;
+    padding: 12px 14px;
+    border-radius: 7px;
     color: #ffffff;
-    background: var(--remax-blue-deep);
+    background: linear-gradient(135deg, var(--remax-blue), var(--remax-blue-deep));
+    border-left: 7px solid var(--remax-red);
+    page-break-inside: avoid;
   }
 
   .print-highlight span,
   .print-reference span,
   .print-table span {
     display: block;
-    margin-bottom: 5px;
-    font-size: 8pt;
+    margin-bottom: 3px;
+    font-size: 7pt;
     font-weight: 800;
     text-transform: uppercase;
   }
 
   .print-highlight strong {
-    font-size: 30pt;
+    display: block;
+    font-size: 25pt;
     line-height: 1;
+    text-align: right;
   }
 
   .print-reference {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 0;
-    border-bottom: 1px solid var(--line);
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 2px solid var(--line);
+    page-break-inside: avoid;
   }
 
   .print-reference strong {
     color: var(--remax-red);
-    font-size: 24pt;
+    font-size: 20pt;
+    line-height: 1;
+  }
+
+  .print-price-strategy {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+
+  .print-price-strategy div {
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-top-width: 5px;
+    border-radius: 6px;
+    background: #ffffff;
+  }
+
+  .print-price-strategy span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 7pt;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .print-price-strategy strong {
+    display: block;
+    font-size: 13pt;
+    line-height: 1;
+  }
+
+  .print-strategy-fast {
+    border-top-color: #18a058 !important;
+    background: #f0fbf5 !important;
+  }
+
+  .print-strategy-fast strong {
+    color: #08723d;
+  }
+
+  .print-strategy-correct {
+    border-top-color: #f4c430 !important;
+    background: #fff9e6 !important;
+  }
+
+  .print-strategy-correct strong {
+    color: #9a6b00;
+  }
+
+  .print-strategy-limit {
+    border-top-color: var(--remax-red) !important;
+    background: #fff1f2 !important;
+  }
+
+  .print-strategy-limit strong {
+    color: var(--remax-red);
   }
 
   .print-table {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin: 16px 0;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin: 8px 0;
+    page-break-inside: avoid;
   }
 
   .print-table div {
-    padding: 12px;
+    min-height: 34px;
+    padding: 6px 7px;
     border: 1px solid var(--line);
+    border-radius: 5px;
+    background: #f8faff;
   }
 
   .print-table strong {
     color: var(--remax-blue-deep);
-    font-size: 12pt;
+    font-size: 8.8pt;
+    line-height: 1.15;
   }
 
   .print-calculation-detail {
-    margin-top: 16px;
-    padding: 12px;
+    margin-top: 8px;
+    padding: 8px 10px;
     border: 1px solid var(--line);
+    border-radius: 6px;
     background: #f8faff;
+    page-break-inside: avoid;
   }
 
   .print-calculation-detail h2,
   .print-breakdown h2 {
-    margin: 18px 0 8px;
+    margin: 10px 0 5px;
     color: #162033;
-    font-size: 14pt;
+    font-size: 11pt;
   }
 
   .print-calculation-detail h2 {
@@ -581,15 +724,16 @@ dl {
   .print-breakdown div {
     display: flex;
     justify-content: space-between;
-    gap: 20px;
-    padding: 10px 0;
+    align-items: baseline;
+    gap: 12px;
+    padding: 5px 0;
     border-bottom: 1px solid var(--line);
   }
 
   .print-calculation-detail dt,
   .print-breakdown dt {
     color: var(--muted);
-    font-size: 9pt;
+    font-size: 7.5pt;
     font-weight: 800;
     text-transform: uppercase;
   }
@@ -597,14 +741,20 @@ dl {
   .print-calculation-detail dd,
   .print-breakdown dd {
     margin: 0;
-    font-size: 11pt;
+    max-width: 58%;
+    font-size: 8.8pt;
     font-weight: 900;
+    text-align: right;
+  }
+
+  .print-breakdown {
+    page-break-inside: avoid;
   }
 
   .print-note {
-    margin-top: 18px;
+    margin-top: 8px;
     color: var(--muted);
-    font-size: 9pt;
-    line-height: 1.45;
+    font-size: 7.5pt;
+    line-height: 1.25;
   }
 }
