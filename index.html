@@ -73,17 +73,17 @@
 
           <div class="split-fields">
             <div class="field-group">
-              <label for="landArea">Área do terreno</label>
+              <label for="pricePerSqmLow">Preço m² mínimo</label>
               <div class="input-unit">
-                <input id="landArea" name="landArea" type="text" inputmode="decimal" value="0" placeholder="0" />
-                <span>m²</span>
+                <input id="pricePerSqmLow" name="pricePerSqmLow" type="text" inputmode="decimal" placeholder="Ex.: 2200" />
+                <span>€</span>
               </div>
             </div>
 
             <div class="field-group">
-              <label for="pricePerSqmLow">Preço m² mínimo</label>
+              <label for="pricePerSqmHigh">Preço m² máximo</label>
               <div class="input-unit">
-                <input id="pricePerSqmLow" name="pricePerSqmLow" type="text" inputmode="decimal" placeholder="Ex.: 2200" />
+                <input id="pricePerSqmHigh" name="pricePerSqmHigh" type="text" inputmode="decimal" placeholder="Ex.: 2400" />
                 <span>€</span>
               </div>
             </div>
@@ -91,10 +91,10 @@
 
           <div class="split-fields">
             <div class="field-group">
-              <label for="pricePerSqmHigh">Preço m² máximo</label>
+              <label for="landArea">Área do terreno</label>
               <div class="input-unit">
-                <input id="pricePerSqmHigh" name="pricePerSqmHigh" type="text" inputmode="decimal" placeholder="Ex.: 2400" />
-                <span>€</span>
+                <input id="landArea" name="landArea" type="text" inputmode="decimal" value="0" placeholder="0" />
+                <span>m²</span>
               </div>
             </div>
 
@@ -106,7 +106,9 @@
                 <option value="rustic">Terreno rústico</option>
               </select>
             </div>
+          </div>
 
+          <div class="split-fields">
             <div class="field-group">
               <label for="buildableArea">Construção permitida</label>
               <div class="input-unit">

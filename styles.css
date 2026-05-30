@@ -273,7 +273,7 @@ select:disabled {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
-  margin-top: 12px;
+  margin: 12px 0 22px;
 }
 
 .strategy-card {
