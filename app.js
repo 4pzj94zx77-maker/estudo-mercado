@@ -58,14 +58,13 @@ const fields = {
   landType: document.querySelector("#landType"),
   landReference: document.querySelector("#landReference"),
   buildableArea: document.querySelector("#buildableArea"),
-  pricePerSqm: document.querySelector("#pricePerSqm"),
+  pricePerSqmLow: document.querySelector("#pricePerSqmLow"),
+  pricePerSqmHigh: document.querySelector("#pricePerSqmHigh"),
 };
 
 const output = {
   resultClient: document.querySelector("#resultClient"),
   resultLocation: document.querySelector("#resultLocation"),
-  valueRange: document.querySelector("#valueRange"),
-  referenceValue: document.querySelector("#referenceValue"),
   fastSaleValue: document.querySelector("#fastSaleValue"),
   correctSaleValue: document.querySelector("#correctSaleValue"),
   marketLimitValue: document.querySelector("#marketLimitValue"),
@@ -88,8 +87,6 @@ const pdfButton = document.querySelector("#pdfButton");
 const printOutput = {
   client: document.querySelector("#printClient"),
   location: document.querySelector("#printLocation"),
-  range: document.querySelector("#printRange"),
-  reference: document.querySelector("#printReference"),
   fastSaleValue: document.querySelector("#printFastSaleValue"),
   correctSaleValue: document.querySelector("#printCorrectSaleValue"),
   marketLimitValue: document.querySelector("#printMarketLimitValue"),
@@ -143,6 +140,11 @@ function formatCurrency(value) {
   return currencyFormatter.format(Math.round(value || 0));
 }
 
+function formatCurrencyRange(low, high) {
+  if (Math.round(low || 0) === Math.round(high || 0)) return formatCurrency(low);
+  return `${formatCurrency(low)} - ${formatCurrency(high)}`;
+}
+
 function formatArea(value) {
   return `${areaFormatter.format(value || 0)} m²`;
 }
@@ -170,8 +172,26 @@ function getLandReference(landType, landReference) {
 }
 
 function formatRateRange(low, high) {
-  if (low === high) return `${formatCurrency(low).replace(/\s?€/, "")} €/m²`;
+  if (Math.round(low || 0) === Math.round(high || 0)) return `${formatCurrency(low).replace(/\s?€/, "")} €/m²`;
   return `${formatCurrency(low).replace(/\s?€/, "")} € a ${formatCurrency(high).replace(/\s?€/, "")} €/m²`;
+}
+
+function normalizePriceRange(lowInput, highInput) {
+  const low = parseNumber(lowInput);
+  const high = parseNumber(highInput);
+
+  if (low && high) {
+    return {
+      low: Math.min(low, high),
+      high: Math.max(low, high),
+    };
+  }
+
+  const singleValue = low || high || 0;
+  return {
+    low: singleValue,
+    high: singleValue,
+  };
 }
 
 function formatPotentialCost(lowValue, highValue, buildableArea, landType) {
@@ -251,26 +271,33 @@ function getValuation() {
   const dependentArea = parseNumber(fields.dependentArea.value);
   const landArea = landType ? parseNumber(fields.landArea.value) : 0;
   const buildableArea = landType === "urban" ? parseNumber(fields.buildableArea.value) : 0;
-  const pricePerSqm = parseNumber(fields.pricePerSqm.value);
+  const priceRange = normalizePriceRange(fields.pricePerSqmLow.value, fields.pricePerSqmHigh.value);
+  const pricePerSqmLow = priceRange.low;
+  const pricePerSqmHigh = priceRange.high;
+  const pricePerSqmReference = (pricePerSqmLow + pricePerSqmHigh) / 2;
 
-  const privateValue = privateArea * pricePerSqm;
-  const dependentLowValue = dependentArea * pricePerSqm * DEPENDENT_LOW_WEIGHT;
-  const dependentHighValue = dependentArea * pricePerSqm * DEPENDENT_HIGH_WEIGHT;
+  const privateLowValue = privateArea * pricePerSqmLow;
+  const privateHighValue = privateArea * pricePerSqmHigh;
+  const privateValue = (privateLowValue + privateHighValue) / 2;
+  const dependentLowValue = dependentArea * pricePerSqmLow * DEPENDENT_LOW_WEIGHT;
+  const dependentHighValue = dependentArea * pricePerSqmHigh * DEPENDENT_HIGH_WEIGHT;
   const landLowValue = landArea * selectedLandReference.low;
   const landHighValue = landArea * selectedLandReference.high;
   const dependentWeightedArea = dependentArea * DEPENDENT_LOW_WEIGHT;
   const detailedWeightedArea = privateArea + dependentWeightedArea;
-  const detailedBaseValue = detailedWeightedArea * pricePerSqm;
-  const baseLowValue = privateValue + dependentLowValue + landLowValue;
-  const baseHighValue = privateValue + dependentHighValue + landHighValue;
+  const detailedBaseLowValue = detailedWeightedArea * pricePerSqmLow;
+  const detailedBaseHighValue = detailedWeightedArea * pricePerSqmHigh;
+  const detailedBaseValue = (detailedBaseLowValue + detailedBaseHighValue) / 2;
+  const baseLowValue = privateLowValue + dependentLowValue + landLowValue;
+  const baseHighValue = privateHighValue + dependentHighValue + landHighValue;
   const conditionUpliftRange = getConditionUpliftRange(condition);
   const conditionUpliftLow = baseLowValue * conditionUpliftRange.low;
   const conditionUpliftHigh = baseHighValue * conditionUpliftRange.high;
   const lowValue = baseLowValue + conditionUpliftLow;
   const highValue = baseHighValue + conditionUpliftHigh;
   const referenceValue = (lowValue + highValue) / 2;
-  const weightedLandLowArea = pricePerSqm ? landLowValue / pricePerSqm : 0;
-  const weightedLandHighArea = pricePerSqm ? landHighValue / pricePerSqm : 0;
+  const weightedLandLowArea = pricePerSqmLow ? landLowValue / pricePerSqmLow : 0;
+  const weightedLandHighArea = pricePerSqmHigh ? landHighValue / pricePerSqmHigh : 0;
   const weightedLowArea = privateArea + dependentArea * DEPENDENT_LOW_WEIGHT + weightedLandLowArea;
   const weightedHighArea = privateArea + dependentArea * DEPENDENT_HIGH_WEIGHT + weightedLandHighArea;
 
@@ -291,9 +318,15 @@ function getValuation() {
     dependentWeightedArea,
     detailedWeightedArea,
     detailedBaseValue,
+    detailedBaseLowValue,
+    detailedBaseHighValue,
     landArea,
     buildableArea,
-    pricePerSqm,
+    pricePerSqmLow,
+    pricePerSqmHigh,
+    pricePerSqmReference,
+    privateLowValue,
+    privateHighValue,
     privateValue,
     dependentLowValue,
     dependentHighValue,
@@ -315,9 +348,8 @@ function render() {
   const locationParts = [valuation.street, valuation.locality].filter(Boolean);
   const client = valuation.clientName || "Por preencher";
   const location = locationParts.length ? locationParts.join(", ") : "Morada por preencher";
-  const range = `${formatCurrency(valuation.lowValue)} - ${formatCurrency(valuation.highValue)}`;
   const weightedArea = `${formatArea(valuation.weightedLowArea)} - ${formatArea(valuation.weightedHighArea)}`;
-  const zonePrice = `${formatCurrency(valuation.pricePerSqm).replace(/\s?€/, "")} €/m²`;
+  const zonePrice = formatRateRange(valuation.pricePerSqmLow, valuation.pricePerSqmHigh);
   const dependentValue = `${formatCurrency(valuation.dependentLowValue)} - ${formatCurrency(valuation.dependentHighValue)}`;
   const landValue = `${formatCurrency(valuation.landLowValue)} - ${formatCurrency(valuation.landHighValue)}`;
   const landRate = valuation.landRateDisplay;
@@ -327,7 +359,7 @@ function render() {
   const detailPrivateArea = formatArea(valuation.privateArea);
   const detailDependentArea = `${formatArea(valuation.dependentArea)} x 0,25 = ${formatArea(valuation.dependentWeightedArea)}`;
   const detailWeightedArea = `${formatArea(valuation.privateArea)} + ${formatArea(valuation.dependentWeightedArea)} = ${formatArea(valuation.detailedWeightedArea)}`;
-  const detailBaseValue = `${formatArea(valuation.detailedWeightedArea)} x ${zonePrice} = ${formatCurrency(valuation.detailedBaseValue)}`;
+  const detailBaseValue = `${formatArea(valuation.detailedWeightedArea)} x ${zonePrice} = ${formatCurrencyRange(valuation.detailedBaseLowValue, valuation.detailedBaseHighValue)}`;
   const conditionUplift = valuation.conditionUpliftHigh
     ? `${formatCurrency(valuation.conditionUpliftLow)} - ${formatCurrency(valuation.conditionUpliftHigh)}`
     : formatCurrency(0);
@@ -336,8 +368,6 @@ function render() {
 
   output.resultClient.textContent = valuation.clientName ? `Cliente: ${valuation.clientName}` : "Cliente por preencher";
   output.resultLocation.textContent = location;
-  output.valueRange.textContent = range;
-  output.referenceValue.textContent = formatCurrency(valuation.referenceValue);
   output.fastSaleValue.textContent = formatCurrency(valuation.lowValue);
   output.correctSaleValue.textContent = formatCurrency(valuation.referenceValue);
   output.marketLimitValue.textContent = formatCurrency(valuation.highValue);
@@ -345,7 +375,7 @@ function render() {
   output.zonePrice.textContent = zonePrice;
   output.potentialCost.textContent = potentialCost;
   output.builtCost.textContent = builtCost;
-  output.privateValue.textContent = formatCurrency(valuation.privateValue);
+  output.privateValue.textContent = formatCurrencyRange(valuation.privateLowValue, valuation.privateHighValue);
   output.dependentValue.textContent = dependentValue;
   output.landValue.textContent = landValue;
   output.valuationNote.textContent = resultNote;
@@ -356,8 +386,6 @@ function render() {
 
   printOutput.client.textContent = client;
   printOutput.location.textContent = location;
-  printOutput.range.textContent = range;
-  printOutput.reference.textContent = formatCurrency(valuation.referenceValue);
   printOutput.fastSaleValue.textContent = formatCurrency(valuation.lowValue);
   printOutput.correctSaleValue.textContent = formatCurrency(valuation.referenceValue);
   printOutput.marketLimitValue.textContent = formatCurrency(valuation.highValue);
@@ -372,7 +400,7 @@ function render() {
   printOutput.potentialCost.textContent = potentialCost;
   printOutput.builtCost.textContent = builtCost;
   printOutput.weightedArea.textContent = weightedArea;
-  printOutput.privateValue.textContent = formatCurrency(valuation.privateValue);
+  printOutput.privateValue.textContent = formatCurrencyRange(valuation.privateLowValue, valuation.privateHighValue);
   printOutput.dependentValue.textContent = dependentValue;
   printOutput.landValue.textContent = landValue;
   printOutput.landRate.textContent = landRate;

@@ -81,15 +81,23 @@
             </div>
 
             <div class="field-group">
-              <label for="pricePerSqm">Preço m² da zona</label>
+              <label for="pricePerSqmLow">Preço m² mínimo</label>
               <div class="input-unit">
-                <input id="pricePerSqm" name="pricePerSqm" type="text" inputmode="decimal" placeholder="0" />
+                <input id="pricePerSqmLow" name="pricePerSqmLow" type="text" inputmode="decimal" placeholder="Ex.: 2200" />
                 <span>€</span>
               </div>
             </div>
           </div>
 
           <div class="split-fields">
+            <div class="field-group">
+              <label for="pricePerSqmHigh">Preço m² máximo</label>
+              <div class="input-unit">
+                <input id="pricePerSqmHigh" name="pricePerSqmHigh" type="text" inputmode="decimal" placeholder="Ex.: 2400" />
+                <span>€</span>
+              </div>
+            </div>
+
             <div class="field-group">
               <label for="landType">Tipo de terreno</label>
               <select id="landType" name="landType">
@@ -130,11 +138,6 @@
             </div>
           </div>
 
-          <div class="price-band">
-            <span>Intervalo estimado</span>
-            <strong id="valueRange">0 € - 0 €</strong>
-          </div>
-
           <div class="price-strategy" aria-label="Estratégia de preço">
             <div class="strategy-card strategy-fast">
               <span>Preço rápido de venda</span>
@@ -150,18 +153,13 @@
             </div>
           </div>
 
-          <div class="reference-value">
-            <span>Valor de referência</span>
-            <strong id="referenceValue">0 €</strong>
-          </div>
-
           <div class="metric-grid">
             <div>
               <span>Área ponderada</span>
               <strong id="weightedArea">0 m² - 0 m²</strong>
             </div>
             <div>
-              <span>Média da zona</span>
+              <span>Preço m² da zona</span>
               <strong id="zonePrice">0 €/m²</strong>
             </div>
             <div>
@@ -231,16 +229,6 @@
         <p class="print-client">Cliente: <strong id="printClient">Por preencher</strong></p>
         <p class="print-location" id="printLocation">Morada por preencher</p>
 
-        <div class="print-highlight">
-          <span>Intervalo estimado</span>
-          <strong id="printRange">0 € - 0 €</strong>
-        </div>
-
-        <div class="print-reference">
-          <span>Valor de referência</span>
-          <strong id="printReference">0 €</strong>
-        </div>
-
         <div class="print-price-strategy">
           <div class="print-strategy-fast">
             <span>Preço rápido de venda</span>
@@ -270,7 +258,7 @@
             <strong id="printLandArea">0 m²</strong>
           </div>
           <div>
-            <span>Preço médio da zona</span>
+            <span>Preço m² da zona</span>
             <strong id="printZonePrice">0 €/m²</strong>
           </div>
           <div>
