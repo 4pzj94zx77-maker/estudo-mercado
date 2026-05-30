@@ -223,79 +223,108 @@
       </section>
 
       <section class="print-report" aria-hidden="true">
-        <header class="print-header">
-          <img src="assets/grupovantagem-logo-horizontal-01.png" alt="RE/MAX Grupo Vantagem" />
-          <h1>Estimativa de valor do imóvel</h1>
-        </header>
+        <article class="print-page print-page-summary">
+          <header class="print-header">
+            <img src="assets/grupovantagem-logo-horizontal-01.png" alt="RE/MAX Grupo Vantagem" />
+            <div>
+              <span>Estudo de mercado</span>
+              <h1>Estimativa de valor do imóvel</h1>
+            </div>
+          </header>
 
-        <p class="print-client">Cliente: <strong id="printClient">Por preencher</strong></p>
-        <p class="print-location" id="printLocation">Morada por preencher</p>
+          <div class="print-meta-grid">
+            <div class="print-client-card">
+              <span>Cliente</span>
+              <strong id="printClient">Por preencher</strong>
+              <small id="printLocation">Morada por preencher</small>
+            </div>
 
-        <div class="print-price-strategy">
-          <div class="print-strategy-fast">
-            <span>Preço rápido de venda</span>
-            <strong id="printFastSaleValue">0 €</strong>
+            <div class="print-consultant-card">
+              <span>Consultor imobiliário</span>
+              <strong>Nuno Ferreira</strong>
+              <small>912607974</small>
+              <small>nuno.ferreira@remax.pt</small>
+            </div>
           </div>
-          <div class="print-strategy-correct">
-            <span>Preço correto de venda</span>
-            <strong id="printCorrectSaleValue">0 €</strong>
-          </div>
-          <div class="print-strategy-limit">
-            <span>Preço no limite do mercado</span>
-            <strong id="printMarketLimitValue">0 €</strong>
-          </div>
-        </div>
 
-        <div class="print-table">
-          <div>
-            <span>Área bruta privativa</span>
-            <strong id="printPrivateArea">0 m²</strong>
+          <div class="print-price-strategy">
+            <div class="print-strategy-fast">
+              <span>Preço rápido de venda</span>
+              <strong id="printFastSaleValue">0 €</strong>
+            </div>
+            <div class="print-strategy-correct">
+              <span>Preço correto de venda</span>
+              <strong id="printCorrectSaleValue">0 €</strong>
+            </div>
+            <div class="print-strategy-limit">
+              <span>Preço no limite do mercado</span>
+              <strong id="printMarketLimitValue">0 €</strong>
+            </div>
           </div>
-          <div>
-            <span>Área dependente</span>
-            <strong id="printDependentArea">0 m²</strong>
-          </div>
-          <div>
-            <span>Área do terreno</span>
-            <strong id="printLandArea">0 m²</strong>
-          </div>
-          <div>
-            <span>Preço m² da zona</span>
-            <strong id="printZonePrice">0 €/m²</strong>
-          </div>
-          <div>
-            <span>Estado do imóvel</span>
-            <strong id="printCondition">Usado</strong>
-          </div>
-          <div>
-            <span>Tipo de terreno</span>
-            <strong id="printLandType">Terreno urbano</strong>
-          </div>
-          <div>
-            <span>Referência do terreno</span>
-            <strong id="printLandReference">0 €/m²</strong>
-          </div>
-          <div>
-            <span>Construção permitida</span>
-            <strong id="printBuildableArea">0 m²</strong>
-          </div>
-          <div>
-            <span>Custo por m² de construção potencial</span>
-            <strong id="printPotentialCost">Sem área indicada</strong>
-          </div>
-          <div>
-            <span>Valor por m² ponderado</span>
-            <strong id="printBuiltCost">Sem área indicada</strong>
-          </div>
-          <div>
-            <span>Área ponderada</span>
-            <strong id="printWeightedArea">0 m² - 0 m²</strong>
-          </div>
-        </div>
 
-        <div class="print-calculation-detail">
-          <h2>Cálculo detalhado</h2>
-          <dl>
+          <section class="print-section">
+            <h2>Resumo do imóvel</h2>
+            <div class="print-table">
+              <div>
+                <span>Área bruta privativa</span>
+                <strong id="printPrivateArea">0 m²</strong>
+              </div>
+              <div>
+                <span>Área dependente</span>
+                <strong id="printDependentArea">0 m²</strong>
+              </div>
+              <div>
+                <span>Área do terreno</span>
+                <strong id="printLandArea">0 m²</strong>
+              </div>
+              <div>
+                <span>Preço m² da zona</span>
+                <strong id="printZonePrice">0 €/m²</strong>
+              </div>
+              <div>
+                <span>Estado do imóvel</span>
+                <strong id="printCondition">Usado</strong>
+              </div>
+              <div>
+                <span>Tipo de terreno</span>
+                <strong id="printLandType">Terreno urbano</strong>
+              </div>
+              <div>
+                <span>Referência do terreno</span>
+                <strong id="printLandReference">0 €/m²</strong>
+              </div>
+              <div>
+                <span>Construção permitida</span>
+                <strong id="printBuildableArea">0 m²</strong>
+              </div>
+              <div>
+                <span>Custo por m² de construção potencial</span>
+                <strong id="printPotentialCost">Sem área indicada</strong>
+              </div>
+              <div>
+                <span>Valor por m² ponderado</span>
+                <strong id="printBuiltCost">Sem área indicada</strong>
+              </div>
+              <div>
+                <span>Área ponderada</span>
+                <strong id="printWeightedArea">0 m² - 0 m²</strong>
+              </div>
+            </div>
+          </section>
+        </article>
+
+        <article class="print-page print-page-detail">
+          <header class="print-detail-header">
+            <img src="assets/grupovantagem-logo-horizontal-01.png" alt="RE/MAX Grupo Vantagem" />
+            <div>
+              <span>Detalhe técnico</span>
+              <h1>Cálculo e composição</h1>
+            </div>
+          </header>
+
+          <section class="print-calculation-detail">
+            <h2>Cálculo detalhado</h2>
+            <dl>
             <div>
               <dt>Área bruta privativa</dt>
               <dd id="printDetailPrivateArea">0 m²</dd>
@@ -312,12 +341,12 @@
               <dt>Total ponderado x preço/m²</dt>
               <dd id="printDetailBaseValue">0 m² x 0 €/m² = 0 €</dd>
             </div>
-          </dl>
-        </div>
+            </dl>
+          </section>
 
-        <div class="print-breakdown">
-          <h2>Composição do valor</h2>
-          <dl>
+          <section class="print-breakdown">
+            <h2>Composição do valor</h2>
+            <dl>
             <div>
               <dt>Área bruta privativa</dt>
               <dd id="printPrivateValue">0 €</dd>
@@ -338,12 +367,18 @@
               <dt>Valorização estado</dt>
               <dd id="printConditionUplift">0 €</dd>
             </div>
-          </dl>
-        </div>
+            </dl>
+          </section>
 
-        <p class="print-note" id="printNote">
-          Estimativa indicativa: área dependente calculada entre 1/4 e 1/3 do preço da área bruta privativa; terreno ponderado a 10% do preço m².
-        </p>
+          <p class="print-note" id="printNote">
+            Estimativa indicativa: área dependente calculada entre 1/4 e 1/3 do preço da área bruta privativa; terreno ponderado a 10% do preço m².
+          </p>
+
+          <footer class="print-footer">
+            <strong>Nuno Ferreira</strong>
+            <span>Consultor imobiliário | 912607974 | nuno.ferreira@remax.pt</span>
+          </footer>
+        </article>
       </section>
     </main>
 
