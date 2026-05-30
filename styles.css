@@ -327,6 +327,10 @@ select:disabled {
 }
 
 .recommended-sale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   margin: 0 0 22px;
   padding: 18px 20px;
   border: 1px solid rgba(0, 61, 165, 0.22);
@@ -337,7 +341,7 @@ select:disabled {
 
 .recommended-sale span {
   display: block;
-  margin-bottom: 6px;
+  max-width: 190px;
   color: var(--remax-blue-deep);
   font-size: 0.8rem;
   font-weight: 900;
@@ -349,13 +353,7 @@ select:disabled {
   color: var(--remax-blue);
   font-size: clamp(1.8rem, 7vw, 2.8rem);
   line-height: 1;
-}
-
-.recommended-sale small {
-  display: block;
-  margin-top: 8px;
-  color: var(--muted);
-  font-weight: 800;
+  text-align: right;
 }
 
 .reference-value span {
@@ -526,6 +524,15 @@ dl {
     text-align: left;
   }
 
+  .recommended-sale {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .recommended-sale strong {
+    text-align: left;
+  }
+
   .price-band {
     padding: 18px;
   }
@@ -677,6 +684,13 @@ dl {
     font-weight: 800;
   }
 
+  .print-client-card .print-address-label {
+    margin-top: 15px;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 7pt;
+  }
+
   .print-price-strategy {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -752,7 +766,7 @@ dl {
 
   .print-recommended-sale span {
     display: block;
-    margin-bottom: 5px;
+    max-width: 190px;
     color: var(--remax-blue-deep);
     font-size: 8pt;
     font-weight: 900;
@@ -765,13 +779,6 @@ dl {
     font-size: 25pt;
     line-height: 1;
     text-align: right;
-  }
-
-  .print-recommended-sale small {
-    display: block;
-    color: var(--muted);
-    font-size: 8pt;
-    font-weight: 800;
   }
 
   .print-section {
