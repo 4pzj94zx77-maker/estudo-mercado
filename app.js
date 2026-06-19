@@ -51,6 +51,7 @@ const fields = {
   clientName: document.querySelector("#clientName"),
   street: document.querySelector("#street"),
   locality: document.querySelector("#locality"),
+  propertyType: document.querySelector("#propertyType"),
   condition: document.querySelector("#condition"),
   privateArea: document.querySelector("#privateArea"),
   dependentArea: document.querySelector("#dependentArea"),
@@ -103,6 +104,7 @@ const printOutput = {
   landArea: document.querySelector("#printLandArea"),
   zonePrice: document.querySelector("#printZonePrice"),
   condition: document.querySelector("#printCondition"),
+  propertyType: document.querySelector("#printPropertyType"),
   landType: document.querySelector("#printLandType"),
   landReference: document.querySelector("#printLandReference"),
   buildableArea: document.querySelector("#printBuildableArea"),
@@ -225,13 +227,94 @@ function getValueFromLabel(lines, labels) {
   return "";
 }
 
+function isExtractionLabel(line) {
+  const normalizedLine = normalizeForExtraction(line);
+  return /^(artigo|distrito|concelho|freguesia|titular|area|afectacao|afetacao|valor|matriz|codigo postal|descricao|tipo de predio|servico de financas)\b/.test(
+    normalizedLine,
+  );
+}
+
+function stripKnownAddressLabel(line) {
+  const labels = ["Localização do prédio", "Localizacao do predio", "Localização", "Localizacao", "Morada", "Sito em"];
+  let cleaned = cleanExtractedText(line);
+
+  for (const label of labels) {
+    const normalizedLabel = normalizeForExtraction(label);
+    const normalizedLine = normalizeForExtraction(cleaned);
+    if (!normalizedLine.includes(normalizedLabel)) continue;
+    if (normalizedLine === normalizedLabel) return "";
+
+    const pattern = new RegExp(`.*?${escapeRegExp(label)}\\s*[:\\-]?`, "i");
+    const stripped = cleaned.replace(pattern, "").trim();
+    if (stripped && normalizeForExtraction(stripped) !== normalizedLine) return stripped;
+    if (normalizedLine.startsWith(normalizedLabel)) return "";
+
+    const [, afterColon] = cleaned.split(/[:;-]/);
+    if (afterColon) return afterColon.trim();
+  }
+
+  return cleaned;
+}
+
+function looksLikeAddressLine(line) {
+  const normalizedLine = normalizeForExtraction(line);
+  const streetPrefixes = /^(rua|avenida|av\.|estrada|travessa|largo|praceta|praca|beco|caminho|quinta|urbanizacao|rotunda|bairro|loteamento|sitio|casal)\b/;
+  const numberHints = /\b(n\.?|n2|numero|lote|porta|andar|fracao|fraccao|fracção|dto|direito|esq|esquerdo|r\/c|rc|cave)\b/;
+
+  return streetPrefixes.test(normalizedLine) || numberHints.test(normalizedLine) || /^\d+[a-z]?\b/.test(normalizedLine);
+}
+
+function composeAddress(parts) {
+  return toDisplayText(
+    parts
+      .map(cleanExtractedText)
+      .filter(Boolean)
+      .join(", ")
+      .replace(/\s*,\s*/g, ", "),
+  );
+}
+
 function extractAddress(lines) {
-  const labeledAddress = getValueFromLabel(lines, ["Localização do prédio", "Localizacao do predio", "Localização", "Morada"]);
-  if (labeledAddress) return labeledAddress;
+  const addressLabels = ["Localização do prédio", "Localizacao do predio", "Localização", "Localizacao", "Morada", "Sito em"];
+  const labelIndex = lines.findIndex((line) => {
+    const normalizedLine = normalizeForExtraction(line);
+    return addressLabels.some((label) => normalizedLine.includes(normalizeForExtraction(label)));
+  });
+
+  if (labelIndex >= 0) {
+    const parts = [];
+    const inlineAddress = stripKnownAddressLabel(lines[labelIndex]);
+
+    if (inlineAddress && !isExtractionLabel(inlineAddress)) {
+      parts.push(inlineAddress);
+    }
+
+    for (let index = labelIndex + 1; index < Math.min(labelIndex + 7, lines.length); index += 1) {
+      const line = cleanExtractedText(lines[index]);
+      if (!line || isExtractionLabel(line)) break;
+
+      if (!parts.length || looksLikeAddressLine(line)) {
+        parts.push(line);
+        continue;
+      }
+
+      break;
+    }
+
+    if (parts.length) return composeAddress(parts);
+  }
 
   const streetPrefixes = /^(rua|avenida|av\.|estrada|travessa|largo|praceta|praça|praca|beco|caminho|quinta)\b/i;
-  const streetLine = lines.find((line) => streetPrefixes.test(cleanExtractedText(line)));
-  return streetLine ? toDisplayText(streetLine) : "";
+  const streetIndex = lines.findIndex((line) => streetPrefixes.test(cleanExtractedText(line)));
+
+  if (streetIndex >= 0) {
+    const parts = [lines[streetIndex]];
+    const nextLine = lines[streetIndex + 1];
+    if (nextLine && looksLikeAddressLine(nextLine) && !isExtractionLabel(nextLine)) parts.push(nextLine);
+    return composeAddress(parts);
+  }
+
+  return "";
 }
 
 function extractLocality(lines) {
@@ -242,16 +325,52 @@ function extractLocality(lines) {
   return parish || "";
 }
 
+function extractPostalCode(text) {
+  const match = text.match(/\b(\d{4})[-\s]?(\d{3})\b/);
+  return match ? `${match[1]}-${match[2]}` : "";
+}
+
+function addPostalCodeToAddress(address, postalCode) {
+  if (!address || !postalCode) return address;
+  if (address.includes(postalCode)) return address;
+  return composeAddress([address, postalCode]);
+}
+
+function extractPropertyType(normalizedText) {
+  if (
+    normalizedText.includes("fracao autonoma") ||
+    normalizedText.includes("fraccao autonoma") ||
+    normalizedText.includes("propriedade horizontal") ||
+    normalizedText.includes("apartamento")
+  ) {
+    return "apartment";
+  }
+
+  if (
+    normalizedText.includes("moradia") ||
+    normalizedText.includes("habitacao unifamiliar") ||
+    normalizedText.includes("habitação unifamiliar") ||
+    normalizedText.includes("predio em propriedade total")
+  ) {
+    return "house";
+  }
+
+  return "";
+}
+
 function parseCadernetaText(text) {
   const lines = text
     .split(/\n+/)
     .map(cleanExtractedText)
     .filter(Boolean);
   const normalizedText = normalizeForExtraction(text);
+  const street = extractAddress(lines);
+  const postalCode = extractPostalCode(text);
 
   return {
-    street: extractAddress(lines),
+    street: addPostalCodeToAddress(street, postalCode),
     locality: extractLocality(lines),
+    propertyType: extractPropertyType(normalizedText),
     privateArea: extractArea(normalizedText, ["Área bruta privativa", "Area bruta privativa"]),
     dependentArea: extractArea(normalizedText, ["Área bruta dependente", "Area bruta dependente", "Área dependente", "Area dependente"]),
     landArea: extractArea(normalizedText, ["Área total do terreno", "Area total do terreno", "Área do terreno", "Area do terreno"]),
@@ -276,6 +395,12 @@ function getConditionLabel(condition) {
   if (condition === "new") return "Novo";
   if (condition === "renovated") return "Remodelado";
   return "Usado";
+}
+
+function getPropertyTypeLabel(propertyType) {
+  if (propertyType === "apartment") return "Apartamento";
+  if (propertyType === "house") return "Moradia";
+  return "Por preencher";
 }
 
 function getConditionUpliftRange(condition) {
@@ -449,6 +574,11 @@ function applyCadernetaData(data) {
     filled.push("localidade");
   }
 
+  if (data.propertyType) {
+    fields.propertyType.value = data.propertyType;
+    filled.push("tipo de imóvel");
+  }
+
   if (data.privateArea) {
     fields.privateArea.value = formatInputNumber(data.privateArea);
     filled.push("área bruta privativa");
@@ -508,6 +638,7 @@ async function handleCadernetaUpload(event) {
 }
 
 function getValuation() {
+  const propertyType = fields.propertyType.value;
   const condition = fields.condition.value;
   const landType = fields.landType.value;
   const landReferenceKey = fields.landReference.value;
@@ -551,6 +682,8 @@ function getValuation() {
     clientName: fields.clientName.value.trim(),
     street: fields.street.value.trim(),
     locality: fields.locality.value.trim(),
+    propertyType,
+    propertyTypeLabel: getPropertyTypeLabel(propertyType),
     condition,
     conditionLabel: getConditionLabel(condition),
     landType,
@@ -643,6 +776,7 @@ function render() {
   printOutput.landArea.textContent = formatArea(valuation.landArea);
   printOutput.zonePrice.textContent = zonePrice;
   printOutput.condition.textContent = valuation.conditionLabel;
+  printOutput.propertyType.textContent = valuation.propertyTypeLabel;
   printOutput.landType.textContent = valuation.landTypeLabel;
   printOutput.landReference.textContent = valuation.landReferenceLabel;
   printOutput.buildableArea.textContent = buildableAreaLabel;
