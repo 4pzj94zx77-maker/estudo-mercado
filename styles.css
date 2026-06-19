@@ -688,6 +688,10 @@ dl {
     text-align: right;
   }
 
+  .print-header div {
+    text-align: left;
+  }
+
   .print-header span,
   .print-detail-header span {
     display: block;
