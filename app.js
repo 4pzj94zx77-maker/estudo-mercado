@@ -325,6 +325,62 @@ function extractLocality(lines) {
   return parish || "";
 }
 
+function isLikelyPersonName(value) {
+  const normalizedValue = normalizeForExtraction(value);
+  const cleaned = cleanExtractedText(value);
+  const blockedTerms =
+    /(artigo|matriz|predio|prédio|localizacao|localização|morada|rua|avenida|freguesia|concelho|distrito|area|área|valor|financas|finanças|nif|n\.?i\.?f|codigo|postal|titularidade|propriedade|identificacao|identificação|nome)/;
+
+  return (
+    cleaned.length >= 4 &&
+    cleaned.length <= 90 &&
+    /[a-záàâãéèêíìóòôõúùç]/i.test(cleaned) &&
+    !/\d{3,}/.test(cleaned) &&
+    !blockedTerms.test(normalizedValue)
+  );
+}
+
+function cleanClientName(value) {
+  return toDisplayText(
+    cleanExtractedText(value)
+      .replace(/\bN\.?I\.?F\.?\b\s*[:\-]?\s*\d+/gi, "")
+      .replace(/\b\d{9}\b/g, "")
+      .replace(/^[\s:;\-–]+|[\s:;\-–]+$/g, ""),
+  );
+}
+
+function extractClientName(lines) {
+  const ownerSectionIndex = lines.findIndex((line) => {
+    const normalizedLine = normalizeForExtraction(line);
+    return (
+      normalizedLine.includes("identificacao dos titulares") ||
+      normalizedLine.includes("identificacao do titular") ||
+      normalizedLine.includes("titulares") ||
+      normalizedLine.includes("sujeito passivo") ||
+      normalizedLine.includes("proprietario")
+    );
+  });
+  const searchStart = ownerSectionIndex >= 0 ? ownerSectionIndex : 0;
+  const searchEnd = ownerSectionIndex >= 0 ? Math.min(ownerSectionIndex + 18, lines.length) : lines.length;
+  const labelPattern = /(nome do titular|nome|titular|proprietario|proprietário|sujeito passivo)/i;
+
+  for (let index = searchStart; index < searchEnd; index += 1) {
+    const line = cleanExtractedText(lines[index]);
+    const normalizedLine = normalizeForExtraction(line);
+    if (!labelPattern.test(line) && !labelPattern.test(normalizedLine)) continue;
+
+    const inlineCandidate = cleanClientName(line.replace(labelPattern, "").replace(/^\s*[:;\-–]\s*/, ""));
+    if (isLikelyPersonName(inlineCandidate)) return inlineCandidate;
+
+    for (let nextIndex = index + 1; nextIndex < Math.min(index + 6, searchEnd); nextIndex += 1) {
+      const candidate = cleanClientName(lines[nextIndex]);
+      if (isLikelyPersonName(candidate)) return candidate;
+    }
+  }
+
+  return "";
+}
+
 function extractPostalCode(text) {
   const match = text.match(/\b(\d{4})[-\s]?(\d{3})\b/);
   return match ? `${match[1]}-${match[2]}` : "";
@@ -368,6 +424,7 @@ function parseCadernetaText(text) {
   const postalCode = extractPostalCode(text);
 
   return {
+    clientName: extractClientName(lines),
     street: addPostalCodeToAddress(street, postalCode),
     locality: extractLocality(lines),
     propertyType: extractPropertyType(normalizedText),
@@ -461,12 +518,11 @@ function formatBuiltCost(lowValue, highValue, weightedLowArea, weightedHighArea)
 function updateLandReferenceState(landType) {
   const isRustic = landType === "rustic";
   const hasNoLand = !landType;
-  fields.landArea.disabled = hasNoLand;
+  fields.landArea.disabled = false;
   fields.landReference.disabled = hasNoLand || isRustic;
   fields.buildableArea.disabled = hasNoLand || isRustic;
 
   if (hasNoLand) {
-    fields.landArea.value = "0";
     fields.landReference.value = "";
     fields.buildableArea.value = "0";
   }
@@ -482,7 +538,6 @@ function updatePropertyTypeState(propertyType) {
 
   if (isBuiltProperty) {
     fields.landType.value = "";
-    fields.landArea.value = "0";
     fields.landReference.value = "";
     fields.buildableArea.value = "0";
   }
@@ -576,6 +631,11 @@ async function readPdfText(file) {
 function applyCadernetaData(data) {
   const filled = [];
 
+  if (data.clientName) {
+    fields.clientName.value = data.clientName;
+    filled.push("nome do cliente");
+  }
+
   if (data.street) {
     fields.street.value = data.street;
     filled.push("morada");
@@ -601,9 +661,12 @@ function applyCadernetaData(data) {
     filled.push("área dependente");
   }
 
-  if (data.landArea && !fields.propertyType.value) {
-    fields.landType.value = data.landType || "urban";
-    updateLandReferenceState(fields.landType.value);
+  if (data.landArea) {
+    if (!fields.propertyType.value) {
+      fields.landType.value = data.landType || "urban";
+      updateLandReferenceState(fields.landType.value);
+    }
+
     fields.landArea.value = formatInputNumber(data.landArea);
     filled.push("área do terreno");
   } else if (data.landType && !fields.propertyType.value) {
@@ -658,7 +721,8 @@ function getValuation() {
   const selectedLandReference = getLandReference(landType, landReferenceKey);
   const privateArea = parseNumber(fields.privateArea.value);
   const dependentArea = parseNumber(fields.dependentArea.value);
-  const landArea = landType ? parseNumber(fields.landArea.value) : 0;
+  const landArea = parseNumber(fields.landArea.value);
+  const landCalculationArea = landType ? landArea : 0;
   const buildableArea = landType === "urban" ? parseNumber(fields.buildableArea.value) : 0;
   const priceRange = normalizePriceRange(fields.pricePerSqmLow.value, fields.pricePerSqmHigh.value);
   const pricePerSqmLow = priceRange.low;
@@ -670,8 +734,8 @@ function getValuation() {
   const privateValue = (privateLowValue + privateHighValue) / 2;
   const dependentLowValue = dependentArea * pricePerSqmLow * DEPENDENT_LOW_WEIGHT;
   const dependentHighValue = dependentArea * pricePerSqmHigh * DEPENDENT_HIGH_WEIGHT;
-  const landLowValue = landArea * selectedLandReference.low;
-  const landHighValue = landArea * selectedLandReference.high;
+  const landLowValue = landCalculationArea * selectedLandReference.low;
+  const landHighValue = landCalculationArea * selectedLandReference.high;
   const dependentWeightedArea = dependentArea * DEPENDENT_LOW_WEIGHT;
   const detailedWeightedArea = privateArea + dependentWeightedArea;
   const detailedBaseLowValue = detailedWeightedArea * pricePerSqmLow;
