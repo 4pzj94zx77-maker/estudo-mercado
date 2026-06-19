@@ -476,6 +476,18 @@ function updateLandReferenceState(landType) {
   }
 }
 
+function updatePropertyTypeState(propertyType) {
+  const isBuiltProperty = propertyType === "apartment" || propertyType === "house";
+  fields.landType.disabled = isBuiltProperty;
+
+  if (isBuiltProperty) {
+    fields.landType.value = "";
+    fields.landArea.value = "0";
+    fields.landReference.value = "";
+    fields.buildableArea.value = "0";
+  }
+}
+
 function getValuationNote(valuation) {
   const baseNote = "Estimativa indicativa: área dependente calculada entre 1/4 e 1/3 do preço da área bruta privativa.";
   const landNote = !valuation.landType
@@ -589,12 +601,12 @@ function applyCadernetaData(data) {
     filled.push("área dependente");
   }
 
-  if (data.landArea) {
+  if (data.landArea && !fields.propertyType.value) {
     fields.landType.value = data.landType || "urban";
     updateLandReferenceState(fields.landType.value);
     fields.landArea.value = formatInputNumber(data.landArea);
     filled.push("área do terreno");
-  } else if (data.landType) {
+  } else if (data.landType && !fields.propertyType.value) {
     fields.landType.value = data.landType;
     updateLandReferenceState(fields.landType.value);
     filled.push("tipo de terreno");
@@ -639,6 +651,7 @@ async function handleCadernetaUpload(event) {
 
 function getValuation() {
   const propertyType = fields.propertyType.value;
+  updatePropertyTypeState(propertyType);
   const condition = fields.condition.value;
   const landType = fields.landType.value;
   const landReferenceKey = fields.landReference.value;
@@ -724,6 +737,7 @@ function getValuation() {
 
 function render() {
   const valuation = getValuation();
+  updatePropertyTypeState(valuation.propertyType);
   updateLandReferenceState(valuation.landType);
   const locationParts = [valuation.street, valuation.locality].filter(Boolean);
   const client = valuation.clientName || "Por preencher";
