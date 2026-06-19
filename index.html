@@ -29,6 +29,18 @@
             <button type="reset" class="ghost-button" id="resetButton">Limpar</button>
           </div>
 
+          <div class="document-upload">
+            <label for="cadernetaFile">Caderneta predial</label>
+            <input id="cadernetaFile" name="cadernetaFile" type="file" accept="application/pdf,.pdf" />
+            <p class="upload-status" id="cadernetaStatus">Seleciona um PDF para preencher morada e áreas automaticamente.</p>
+            <dl class="upload-summary" id="cadernetaSummary" hidden>
+              <div>
+                <dt>Campos preenchidos</dt>
+                <dd id="cadernetaFilledFields">-</dd>
+              </div>
+            </dl>
+          </div>
+
           <div class="field-group">
             <label for="clientName">Nome do cliente</label>
             <input id="clientName" name="clientName" type="text" autocomplete="name" placeholder="Ex.: Ana Silva" />

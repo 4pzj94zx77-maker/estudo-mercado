@@ -84,6 +84,12 @@ const output = {
 };
 
 const pdfButton = document.querySelector("#pdfButton");
+const cadernetaUpload = {
+  input: document.querySelector("#cadernetaFile"),
+  status: document.querySelector("#cadernetaStatus"),
+  summary: document.querySelector("#cadernetaSummary"),
+  filledFields: document.querySelector("#cadernetaFilledFields"),
+};
 
 const printOutput = {
   client: document.querySelector("#printClient"),
@@ -136,6 +142,121 @@ function parseNumber(value) {
 
   const number = Number.parseFloat(normalized);
   return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeForExtraction(value) {
+  return value
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[²ºª]/g, "2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function cleanExtractedText(value) {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .trim();
+}
+
+function toDisplayText(value) {
+  const cleaned = cleanExtractedText(value);
+  if (!cleaned || /[a-záàâãéèêíìóòôõúùç]/.test(cleaned)) return cleaned;
+
+  return cleaned
+    .toLowerCase()
+    .replace(/\b([\p{L}])/gu, (letter) => letter.toUpperCase())
+    .replace(/\b(De|Da|Do|Das|Dos|E)\b/g, (word) => word.toLowerCase());
+}
+
+function formatInputNumber(value) {
+  return areaFormatter.format(value || 0);
+}
+
+function extractArea(normalizedText, labels) {
+  for (const label of labels) {
+    const normalizedLabel = escapeRegExp(normalizeForExtraction(label));
+    const pattern = new RegExp(`${normalizedLabel}\\s*[:\\-]?\\s*([0-9][0-9\\s.]*[,]?\\d*)\\s*(?:m2|m\\s*2)?`, "i");
+    const match = normalizedText.match(pattern);
+
+    if (match) {
+      const value = parseNumber(match[1]);
+      if (value) return value;
+    }
+  }
+
+  return 0;
+}
+
+function getValueFromLabel(lines, labels) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = cleanExtractedText(lines[index]);
+    const normalizedLine = normalizeForExtraction(line);
+
+    for (const label of labels) {
+      const normalizedLabel = normalizeForExtraction(label);
+      if (!normalizedLine.includes(normalizedLabel)) continue;
+
+      const afterLabel = line
+        .replace(new RegExp(`.*?${escapeRegExp(label)}\\s*[:\\-]?`, "i"), "")
+        .trim();
+
+      if (afterLabel && normalizeForExtraction(afterLabel) !== normalizedLine) return toDisplayText(afterLabel);
+
+      for (let nextIndex = index + 1; nextIndex < Math.min(index + 5, lines.length); nextIndex += 1) {
+        const nextLine = cleanExtractedText(lines[nextIndex]);
+        const normalizedNextLine = normalizeForExtraction(nextLine);
+        const looksLikeLabel = /^(artigo|distrito|concelho|freguesia|titular|area|afectacao|afetação|valor|matriz)\b/.test(
+          normalizedNextLine,
+        );
+
+        if (nextLine && !looksLikeLabel) return toDisplayText(nextLine);
+      }
+    }
+  }
+
+  return "";
+}
+
+function extractAddress(lines) {
+  const labeledAddress = getValueFromLabel(lines, ["Localização do prédio", "Localizacao do predio", "Localização", "Morada"]);
+  if (labeledAddress) return labeledAddress;
+
+  const streetPrefixes = /^(rua|avenida|av\.|estrada|travessa|largo|praceta|praça|praca|beco|caminho|quinta)\b/i;
+  const streetLine = lines.find((line) => streetPrefixes.test(cleanExtractedText(line)));
+  return streetLine ? toDisplayText(streetLine) : "";
+}
+
+function extractLocality(lines) {
+  const council = getValueFromLabel(lines, ["Concelho"]);
+  if (council) return council;
+
+  const parish = getValueFromLabel(lines, ["Freguesia"]);
+  return parish || "";
+}
+
+function parseCadernetaText(text) {
+  const lines = text
+    .split(/\n+/)
+    .map(cleanExtractedText)
+    .filter(Boolean);
+  const normalizedText = normalizeForExtraction(text);
+
+  return {
+    street: extractAddress(lines),
+    locality: extractLocality(lines),
+    privateArea: extractArea(normalizedText, ["Área bruta privativa", "Area bruta privativa"]),
+    dependentArea: extractArea(normalizedText, ["Área bruta dependente", "Area bruta dependente", "Área dependente", "Area dependente"]),
+    landArea: extractArea(normalizedText, ["Área total do terreno", "Area total do terreno", "Área do terreno", "Area do terreno"]),
+    landType: normalizedText.includes("predio rustico") || normalizedText.includes("prédio rústico") ? "rustic" : "",
+  };
 }
 
 function formatCurrency(value) {
@@ -266,6 +387,124 @@ function getResultNote(valuation) {
     return `${baseNote} ${potentialNote} O intervalo final inclui a valorização aplicável aos dados escolhidos.`;
   }
   return `${baseNote} ${potentialNote}`;
+}
+
+function setUploadStatus(message, type = "") {
+  if (!cadernetaUpload.status) return;
+
+  cadernetaUpload.status.textContent = message;
+  cadernetaUpload.status.classList.toggle("is-success", type === "success");
+  cadernetaUpload.status.classList.toggle("is-error", type === "error");
+}
+
+function resetCadernetaSummary() {
+  if (cadernetaUpload.summary) cadernetaUpload.summary.hidden = true;
+  if (cadernetaUpload.filledFields) cadernetaUpload.filledFields.textContent = "-";
+  setUploadStatus("Seleciona um PDF para preencher morada e áreas automaticamente.");
+}
+
+async function ensurePdfReader() {
+  if (!window.pdfjsLib) {
+    window.pdfjsLib = await import("./assets/pdfjs/pdf.min.mjs");
+  }
+
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "assets/pdfjs/pdf.worker.min.mjs";
+  return window.pdfjsLib;
+}
+
+async function readPdfText(file) {
+  const pdfjsLib = await ensurePdfReader();
+  if (!pdfjsLib) {
+    throw new Error("Leitor de PDF indisponível.");
+  }
+
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const pages = [];
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item) => item.str)
+      .filter(Boolean)
+      .join("\n");
+
+    pages.push(pageText);
+  }
+
+  return pages.join("\n");
+}
+
+function applyCadernetaData(data) {
+  const filled = [];
+
+  if (data.street) {
+    fields.street.value = data.street;
+    filled.push("morada");
+  }
+
+  if (data.locality) {
+    fields.locality.value = data.locality;
+    filled.push("localidade");
+  }
+
+  if (data.privateArea) {
+    fields.privateArea.value = formatInputNumber(data.privateArea);
+    filled.push("área bruta privativa");
+  }
+
+  if (data.dependentArea) {
+    fields.dependentArea.value = formatInputNumber(data.dependentArea);
+    filled.push("área dependente");
+  }
+
+  if (data.landArea) {
+    fields.landType.value = data.landType || "urban";
+    updateLandReferenceState(fields.landType.value);
+    fields.landArea.value = formatInputNumber(data.landArea);
+    filled.push("área do terreno");
+  } else if (data.landType) {
+    fields.landType.value = data.landType;
+    updateLandReferenceState(fields.landType.value);
+    filled.push("tipo de terreno");
+  }
+
+  render();
+  return filled;
+}
+
+async function handleCadernetaUpload(event) {
+  const [file] = event.target.files;
+  if (!file) {
+    resetCadernetaSummary();
+    return;
+  }
+
+  if (file.type && file.type !== "application/pdf") {
+    setUploadStatus("Seleciona uma caderneta predial em PDF.", "error");
+    return;
+  }
+
+  setUploadStatus("A ler a caderneta predial...");
+
+  try {
+    const text = await readPdfText(file);
+    const extractedData = parseCadernetaText(text);
+    const filled = applyCadernetaData(extractedData);
+
+    if (!filled.length) {
+      setUploadStatus("Não consegui identificar campos automaticamente. Podes preencher os dados manualmente.", "error");
+      if (cadernetaUpload.summary) cadernetaUpload.summary.hidden = true;
+      return;
+    }
+
+    if (cadernetaUpload.summary) cadernetaUpload.summary.hidden = false;
+    if (cadernetaUpload.filledFields) cadernetaUpload.filledFields.textContent = filled.join(", ");
+    setUploadStatus("Caderneta lida. Confirma os campos preenchidos antes de exportar o PDF.", "success");
+  } catch (error) {
+    setUploadStatus("Não foi possível ler este PDF. Se for uma digitalização, preenche os campos manualmente.", "error");
+  }
 }
 
 function getValuation() {
@@ -425,8 +664,15 @@ function render() {
 form.addEventListener("input", render);
 form.addEventListener("change", render);
 form.addEventListener("reset", () => {
-  window.setTimeout(render, 0);
+  window.setTimeout(() => {
+    resetCadernetaSummary();
+    render();
+  }, 0);
 });
+
+if (cadernetaUpload.input) {
+  cadernetaUpload.input.addEventListener("change", handleCadernetaUpload);
+}
 
 pdfButton.addEventListener("click", () => {
   render();
