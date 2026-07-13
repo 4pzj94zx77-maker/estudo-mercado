@@ -24,7 +24,7 @@ O OCR pode demorar alguns segundos por página. Todos os campos encontrados deve
 
 Dependências incluídas localmente:
 
-* PDF.js 5.6.205
+* PDF.js 3.11.174, versão legacy para compatibilidade com Safari e Chrome no iPhone
 * Tesseract.js 7.0.0
 * Tesseract.js Core 7.0.0
 * Dados de idioma português do Tesseract.js 1.0.0
