@@ -1161,11 +1161,35 @@ function reconstructPdfLines(items) {
 }
 
 async function ensurePdfReader() {
+  // PDF.js 5 usa estas APIs nativas. Algumas versões do Safari no iPhone
+  // ainda não as expõem, pelo que a importação do módulo falhava de imediato.
+  if (typeof Promise.withResolvers !== "function") {
+    Promise.withResolvers = function withResolvers() {
+      let resolve;
+      let reject;
+      const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+      });
+      return { promise, resolve, reject };
+    };
+  }
+
+  if (typeof URL.parse !== "function") {
+    URL.parse = function parseUrl(url, base) {
+      try {
+        return new URL(url, base);
+      } catch {
+        return null;
+      }
+    };
+  }
+
   if (!window.pdfjsLib) {
     window.pdfjsLib = await import("./assets/pdfjs/pdf.min.mjs");
   }
 
-  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "assets/pdfjs/pdf.worker.min.mjs";
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("assets/pdfjs/pdf.worker.min.mjs", document.baseURI).href;
   return window.pdfjsLib;
 }
 
@@ -1411,6 +1435,7 @@ async function handleCadernetaUpload(event) {
     showExtractionReview(extractedData);
     setUploadStatus("Caderneta lida. Revê os dados encontrados antes de os aplicar.", "success");
   } catch (error) {
+    console.error("Falha ao ler a caderneta predial:", error);
     if (error.message === "PDF_TOO_LARGE") {
       setUploadStatus("O PDF excede o limite de 10 MB.", "error");
     } else if (error.message === "PDF_TOO_MANY_PAGES") {
@@ -1419,8 +1444,14 @@ async function handleCadernetaUpload(event) {
       setUploadStatus("O reconhecimento terminou, mas não encontrou texto suficiente. Verifica a qualidade da digitalização.", "error");
     } else if (error.message === "OCR_UNAVAILABLE") {
       setUploadStatus("O módulo de reconhecimento de texto não ficou disponível. Recarrega a página e tenta novamente.", "error");
+    } else if (error?.name === "PasswordException") {
+      setUploadStatus("Este PDF está protegido por palavra-passe. Guarda uma cópia sem protecção e tenta novamente.", "error");
+    } else if (error?.name === "InvalidPDFException" || error.message === "INVALID_PDF_SIGNATURE") {
+      setUploadStatus("O ficheiro seleccionado não é um PDF válido ou está danificado.", "error");
+    } else if (/withResolvers|URL\.parse|structuredClone/i.test(String(error?.message || error))) {
+      setUploadStatus("O Safari deste iPhone não suporta o leitor de PDF. Actualiza o iOS e tenta novamente.", "error");
     } else {
-      setUploadStatus("Não foi possível ler este PDF. Se for uma digitalização, preenche os campos manualmente.", "error");
+      setUploadStatus("Não foi possível ler este PDF. Tenta guardar uma nova cópia no iPhone e volta a seleccioná-la.", "error");
     }
   }
 }
